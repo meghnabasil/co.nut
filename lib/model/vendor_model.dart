@@ -1,0 +1,58 @@
+class Vendor {
+  String uid; // Add the UID field
+  String businessName;
+  String email;
+  String phone;
+  String address;
+  String city;
+  String businessType;
+  String productCategory;
+  List<String> businessModel;
+  String imageUrl;
+
+  Vendor({
+    required this.uid,
+    required this.businessName,
+    required this.email,
+    required this.phone,
+    required this.address,
+    required this.city,
+    required this.businessType,
+    required this.productCategory,
+    required this.businessModel,
+    required this.imageUrl,
+  });
+
+  // Convert Vendor object to Map (for Firebase)
+  Map<String, dynamic> toMap() {
+    return {
+      'uid': uid, // Store UID in Firestore
+      'businessName': businessName,
+      'email': email,
+      'phone': phone,
+      'address': address,
+      'city':city,
+      'businessType': businessType,
+      'productCategory': productCategory,
+      'businessModel': businessModel,
+      'imageUrl': imageUrl,
+    };
+  }
+
+  // Create Vendor object from Firebase document
+  factory Vendor.fromMap(Map<String, dynamic> map) {
+    return Vendor(
+      uid: map['uid'], // Retrieve UID
+      businessName: map['businessName'],
+      email: map['email'],
+      phone: map['phone'],
+      address: map['address'],
+      city:map['city'],
+      businessType: map['businessType'],
+      productCategory: map['productCategory'],
+      businessModel: List<String>.from(map['businessModel']),
+      imageUrl: map['imageUrl'],
+
+    );
+  }
+}

@@ -1,0 +1,1195 @@
+import 'package:dup/view/exportBilling.dart';
+import 'package:dup/view/shipping_address.dart';
+import 'package:dup/view/subscriptionConfirmationPage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:dup/view/messagescreen.dart';
+
+class ProductDetail extends StatefulWidget {
+  final String productId;
+
+  ProductDetail({required this.productId});
+
+  @override
+  _ProductDetailState createState() => _ProductDetailState();
+}
+
+class _ProductDetailState extends State<ProductDetail> {
+  Map<String, dynamic>? productData;
+  bool isLoading = true;
+  bool isFavorite = false;
+  int quantity = 1;
+  List<String> imageUrls = [];
+  List<String> cart = [];
+  List<Map<String, dynamic>> products = [];
+  String? userId = FirebaseAuth.instance.currentUser?.uid;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  String? selectedCountry;
+  String? selectedQuantityType;
+
+  bool showExportDetails = false;
+  bool showSubscriptionCard = false;
+  String selectedPlan = '1 Year';
+  double price = 100.0;
+  String vendorName = "Unknown Vendor";
+  String? vendorId;
+  String? vendorEmail;
+  String? vendorPhone;
+  String? vendorAddress;
+  String? vendorCity;
+  Map<String, dynamic>? selectedPlanDetails;
+
+  bool isExportConfirmed = false;
+  Map<String, dynamic>? selectedExportDetails;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProductDetails();
+  }
+
+  String _formatDuration(String duration) {
+    switch (duration) {
+      case 'sixMonths':
+        return '6 Months';
+      case 'threeMonths':
+        return '3 Months';
+      case 'oneMonth':
+        return '1 Month';
+      case 'oneYear':
+        return '1 Year';
+      default:
+        return duration;
+    }
+  }
+
+  Future<void> fetchProductDetails() async {
+    print("Fetching Product Details for ID: ${widget.productId}");
+    try {
+      DocumentSnapshot productSnapshot = await FirebaseFirestore.instance
+          .collection('products')
+          .doc(widget.productId)
+          .get();
+
+      if (productSnapshot.exists) {
+        setState(() {
+          productData = productSnapshot.data() as Map<String, dynamic>?;
+          imageUrls = List<String>.from(productData?['images'] ?? []);
+          vendorId = productData?['vendorId'];
+          isLoading = false;
+        });
+
+        print('Vendor ID: $vendorId');
+
+        if (vendorId != null) {
+          fetchVendorDetails(vendorId!);
+        }
+
+        bool isExporting = productData?['isExporting'] ?? false;
+        bool isSubscription = productData?['isSubscription'] ?? false;
+
+        if (isExporting) {
+          fetchExportingDetails();
+        }
+        if (isSubscription) {
+          await fetchSubscriptionDetails();
+        }
+      } else {
+        setState(() => isLoading = false);
+        print("Product not found");
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      print("Error fetching product: $e");
+    }
+  }
+
+  Future<void> fetchExportingDetails() async {
+    try {
+      QuerySnapshot exportSnapshot = await FirebaseFirestore.instance
+          .collection('products')
+          .doc(widget.productId)
+          .collection('exportingData')
+          .get();
+
+      if (exportSnapshot.docs.isNotEmpty) {
+        List<Map<String, dynamic>> exportingDetails =
+            exportSnapshot.docs.map((doc) {
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          data['country'] = doc.id;
+          return data;
+        }).toList();
+
+        setState(() {
+          productData?['exportingDetails'] = exportingDetails;
+        });
+
+        print("Exporting Details: $exportingDetails");
+      } else {
+        print("No exporting details found");
+      }
+    } catch (e) {
+      print("Error fetching exporting details: $e");
+    }
+  }
+
+  Future<void> fetchSubscriptionDetails() async {
+    try {
+      QuerySnapshot subscriptionSnapshot = await FirebaseFirestore.instance
+          .collection('products')
+          .doc(widget.productId)
+          .collection('subscriptionData')
+          .get();
+
+      if (subscriptionSnapshot.docs.isEmpty) {
+        print("No subscription plans found");
+        return;
+      }
+
+      // Extract all plans from all documents
+      List<Map<String, dynamic>> allPlans = [];
+
+      for (var doc in subscriptionSnapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+
+        // Skip the timestamp field
+        data.remove('createdAt');
+
+        // Convert each plan in the document to a standardized format
+        data.forEach((duration, planData) {
+          if (duration != 'createdAt') {
+            allPlans.add({
+              'duration': duration,
+              'price': planData['price'],
+              'quantity': planData['quantity'],
+              'deliveryFrequency': planData['deliveryFrequency'],
+            });
+          }
+        });
+      }
+
+      setState(() {
+        productData = {
+          ...?productData,
+          'subscriptionDetails': allPlans,
+        };
+      });
+
+      print("Fetched ${allPlans.length} subscription plans");
+    } catch (e) {
+      print("Error fetching subscriptions: $e");
+      // Consider showing an error to the user
+    }
+  }
+
+  Future<void> fetchVendorDetails(String vendorId) async {
+    print(vendorId);
+    try {
+      DocumentSnapshot vendorSnapshot = await FirebaseFirestore.instance
+          .collection('vendors')
+          .doc(vendorId)
+          .get();
+
+      if (vendorSnapshot.exists) {
+        setState(() {
+          vendorName = vendorSnapshot["businessName"];
+          vendorEmail = vendorSnapshot['email'];
+          vendorPhone = vendorSnapshot['phone'];
+          vendorAddress = vendorSnapshot['address'];
+          vendorCity = vendorSnapshot['city'];
+        });
+      } else {
+        print("Vendor not found");
+      }
+    } catch (e) {
+      print("Error fetching vendor details: $e");
+    }
+  }
+
+  void showVendorDetailsPopup() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(vendorName ?? "Vendor Details"),
+          content:
+              Text('$vendorEmail\n $vendorPhone\n $vendorAddress, $vendorCity'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Close"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> checkFavoriteStatus() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) return;
+
+      DocumentSnapshot favSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('favorites')
+          .doc(widget.productId)
+          .get();
+
+      setState(() {
+        isFavorite = favSnapshot.exists;
+      });
+    } catch (e) {
+      print("Error checking favorite status: $e");
+    }
+  }
+
+  Future<void> toggleFavorite() async {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    final User? user = _auth.currentUser;
+    if (user == null) {
+      print("User not logged in");
+      return;
+    }
+
+    String uid = user.uid;
+    CollectionReference favoritesCollection = FirebaseFirestore.instance
+        .collection('favorites')
+        .doc(uid)
+        .collection('items');
+
+    if (isFavorite) {
+      // Remove from favorites
+      await favoritesCollection.doc(widget.productId).delete();
+      setState(() {
+        isFavorite = false;
+      });
+    } else {
+      // Add to favorites
+      await favoritesCollection.doc(widget.productId).set({
+        'productId': widget.productId,
+        'productName': productData?['name'], // Ensure correct field names
+        'imageUrl': imageUrls.isNotEmpty ? imageUrls[0] : '',
+        'vendorId': vendorId,
+        'addedAt': FieldValue.serverTimestamp(),
+      });
+      print("Product Detail.......... ${widget.productId}");
+      setState(() {
+        isFavorite = true;
+      });
+    }
+  }
+
+  // Function to update the price based on the selected plan
+  void updatePrice() {
+    if (selectedPlan == '1 Year') {
+      price = 100.0; // Price for 1 Year plan
+    } else if (selectedPlan == '6 Month') {
+      price = 60.0; // Price for 6 Month plan
+    }
+  }
+
+  Future<void> addToCart() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print("User not logged in");
+      return;
+    }
+
+    String uid = user.uid;
+    CollectionReference cartCollection = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('cart');
+
+    // Add product to cart
+    try {
+      await cartCollection.doc(widget.productId).set({
+        'productId': widget.productId,
+        'productName': productData?['name'],
+        'price': productData?['price'],
+        'imageUrl': imageUrls.isNotEmpty ? imageUrls[0] : '',
+        'quantity': quantity,
+        'addedAt': FieldValue.serverTimestamp(),
+      });
+      print("Product added to cart");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${productData?['name']} added to cart!')),
+      );
+    } catch (e) {
+      print("Error adding to cart: $e");
+    }
+  }
+
+  void confirmExportOrder() {
+    if (selectedCountry == null || selectedQuantityType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please select a country and quantity type")),
+      );
+      return;
+    }
+
+    // Find the selected export details
+    var exportDetails = productData!['exportingDetails']
+        .firstWhere((export) => export['country'] == selectedCountry);
+
+    setState(() {
+      isExportConfirmed = true;
+      selectedExportDetails = exportDetails;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Product Detail", style: TextStyle(color: Colors.white)),
+        backgroundColor: Color(0xFF033015),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      backgroundColor: Colors.white,
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    productData?['name'] ?? 'Product Name',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+
+                  imageUrls.isNotEmpty
+                      ? CarouselSlider.builder(
+                          itemCount: imageUrls.length,
+                          itemBuilder: (context, index, realIndex) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                imageUrls[index],
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Center(
+                                      child: CircularProgressIndicator());
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Icon(Icons.image_not_supported,
+                                        size: 50, color: Colors.red),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          options: CarouselOptions(
+                            height: 200,
+                            enlargeCenterPage: true,
+                            autoPlay: true,
+                            autoPlayInterval: Duration(seconds: 5),
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            "No Images Available",
+                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                          ),
+                        ),
+
+                  SizedBox(height: 10),
+
+                  // Favorite Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: Colors.red,
+                          size: 30,
+                        ),
+                        onPressed: toggleFavorite, //  Corrected function call
+                      ),
+                    ],
+                  ),
+
+                  Divider(thickness: 2, color: Colors.brown),
+                  SizedBox(height: 10),
+
+                  GestureDetector(
+                    onTap: () => showVendorDetailsPopup(),
+                    child: Text(
+                      " $vendorName",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 10),
+
+                  Row(
+                    children: [
+                      // Product Price on the left
+                      Text(
+                        '₹${productData?['price'] ?? '0'}',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF380230),
+                        ),
+                      ),
+
+                      Spacer(),
+                      // Pushes the icon to the right
+
+                      // Subscription Icon (Shown only if the product has a subscription)
+                      if (productData?['isSubscription'] == true)
+                        Tooltip(
+                          message: "This product Available for subscription",
+                          child: Icon(Icons.lock_clock,
+                              color: Colors.black, size: 40),
+                        ),
+                    ],
+                  ),
+
+                  SizedBox(height: 10),
+
+                  // Export signal card
+                  if (productData?['exportingDetails'] != null &&
+                      productData!['exportingDetails'].isNotEmpty)
+                    Positioned(
+                      right: 10,
+                      top: 5,
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF033015),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          'Exporting International',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  SizedBox(height: 10),
+                  Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    child: Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Text(
+                        productData?['description'] ??
+                            'No description available.',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 50),
+
+                  Center(
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          width: 200,
+                          child: ElevatedButton(
+                            onPressed:
+                                addToCart, // Call the addToCart function here
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[800],
+                              foregroundColor: Colors.white,
+                            ),
+                            child: Text('Add to Cart'),
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        SizedBox(
+                          width: 200,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              List<String> productIds = [
+                                widget.productId
+                              ]; // Single product ID
+                              List<int> quantities = [
+                                quantity
+                              ]; // Current quantity
+
+                              // Calculate total price for the current product
+                              double totalPrice =
+                                  (productData?['price'] ?? 0) * quantity;
+
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => ShippingAddress(
+                                          productIds: productIds,
+                                          quantities: quantities,
+                                          totalPrice: totalPrice,
+                                        )),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF033015),
+                                foregroundColor: Colors.white),
+                            child: Text('Buy'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 50),
+                  if (productData?['isExporting'] == true)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!isExportConfirmed)
+                          Card(
+                            color: Colors.grey,
+                            elevation: 4,
+                            margin: EdgeInsets.all(10),
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  RichText(
+                                    text: TextSpan(
+                                      children: [
+                                        WidgetSpan(
+                                          child: Icon(Icons.flight_takeoff,
+                                              color: Colors.black, size: 20),
+                                        ),
+                                        TextSpan(
+                                          text:
+                                              " --- Select Shipping Destination ---",
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  DropdownButton<String>(
+                                    value: selectedCountry,
+                                    hint: Text("Choose Destination"),
+                                    isExpanded: true,
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        selectedCountry = newValue;
+                                      });
+                                    },
+                                    items: productData!['exportingDetails']
+                                        .map<DropdownMenuItem<String>>(
+                                            (export) =>
+                                                DropdownMenuItem<String>(
+                                                  value: export['country'],
+                                                  child:
+                                                      Text(export['country']),
+                                                ))
+                                        .toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                        // Exporting Details
+                        Stack(
+                          children: [
+                            Center(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Card(
+                                    color: Color(0xFF033015),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Padding(
+                                      padding: EdgeInsets.all(45),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Exporting Details",
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          SizedBox(height: 5),
+                                          Divider(
+                                              thickness: 2, color: Colors.grey),
+                                          if (selectedCountry == null)
+                                            Center(
+                                              child: Text(
+                                                "This product can be exported. Select the desired destination",
+                                                style: TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 16,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            )
+                                          else if (productData?[
+                                                  'exportingDetails'] !=
+                                              null)
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: productData![
+                                                      'exportingDetails']
+                                                  .where((export) =>
+                                                      export['country'] ==
+                                                      selectedCountry)
+                                                  .map<Widget>((export) {
+                                                var pricing =
+                                                    export['exportPricing'];
+                                                var minQuan =
+                                                    pricing['minQuantity'];
+                                                var mxQuan =
+                                                    pricing['maxQuantity'];
+                                                var minPrice =
+                                                    pricing['costPerWeightMin'];
+                                                var maxPrice =
+                                                    pricing['costPerWeightMax'];
+                                                return Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                        "${export['country']}:",
+                                                        style: TextStyle(
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                Colors.white)),
+                                                    SizedBox(height: 3),
+
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white,
+                                                        // White background
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
+                                                        // Rounded corners
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color:
+                                                                Colors.black12,
+                                                            // Light shadow
+                                                            blurRadius: 4,
+                                                            spreadRadius: 2,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      padding:
+                                                          EdgeInsets.all(8),
+                                                      margin:
+                                                          EdgeInsets.symmetric(
+                                                              vertical: 5),
+                                                      child: Row(
+                                                        children: [
+                                                          Radio<String>(
+                                                            value:
+                                                                "minQuantity",
+                                                            groupValue:
+                                                                selectedQuantityType,
+                                                            onChanged: (String?
+                                                                value) {
+                                                              setState(() {
+                                                                selectedQuantityType =
+                                                                    value;
+                                                              });
+                                                            },
+                                                          ),
+                                                          Expanded(
+                                                            child: Text(
+                                                              "Min Quantity: $minQuan \n  Cost per Weight: $minPrice",
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .black),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+
+                                                    // Max Quantity Selection with White Background
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white,
+                                                        // White background
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
+                                                        // Rounded corners
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color:
+                                                                Colors.black12,
+                                                            // Light shadow
+                                                            blurRadius: 4,
+                                                            spreadRadius: 2,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      padding:
+                                                          EdgeInsets.all(8),
+                                                      margin:
+                                                          EdgeInsets.symmetric(
+                                                              vertical: 5),
+                                                      child: Row(
+                                                        children: [
+                                                          Radio<String>(
+                                                            value:
+                                                                "maxQuantity",
+                                                            groupValue:
+                                                                selectedQuantityType,
+                                                            onChanged: (String?
+                                                                value) {
+                                                              setState(() {
+                                                                selectedQuantityType =
+                                                                    value;
+                                                              });
+                                                            },
+                                                          ),
+                                                          Expanded(
+                                                            child: Text(
+                                                              "Max Quantity: $mxQuan \n Cost per Weight: $maxPrice",
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .black),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    SizedBox(height: 9),
+                                                    Text(
+                                                        "Insurance Cost: ${pricing['insuranceCost']}",
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white)),
+                                                    Text(
+                                                        "Port Cost: ${pricing['portCost']}",
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white)),
+                                                    SizedBox(height: 8),
+
+                                                    // Select Button
+                                                    ElevatedButton(
+                                                      onPressed:
+                                                          selectedQuantityType !=
+                                                                  null
+                                                              ? () {
+                                                                  showDialog(
+                                                                    context:
+                                                                        context,
+                                                                    builder:
+                                                                        (context) =>
+                                                                            AlertDialog(
+                                                                      title: Text(
+                                                                          "Confirmation"),
+                                                                      content: Text(
+                                                                          "Are you sure you need this product to export?"),
+                                                                      actions: [
+                                                                        TextButton(
+                                                                          onPressed: () =>
+                                                                              Navigator.pop(context),
+                                                                          child:
+                                                                              Text("Cancel"),
+                                                                        ),
+                                                                        ElevatedButton(
+                                                                          onPressed:
+                                                                              () {
+                                                                            // Find the selected export details
+                                                                            var exportDetails =
+                                                                                productData!['exportingDetails'].firstWhere(
+                                                                              (export) => export['country'] == selectedCountry,
+                                                                            );
+
+                                                                            // Extract product details
+                                                                            String
+                                                                                productId =
+                                                                                widget.productId; // Pass the productId
+                                                                            String
+                                                                                productName =
+                                                                                productData!['name'];
+                                                                            String image = imageUrls.isNotEmpty
+                                                                                ? imageUrls[0]
+                                                                                : '';
+                                                                            String
+                                                                                vendorId =
+                                                                                productData!['vendorId'];
+                                                                            String
+                                                                                selectedDestination =
+                                                                                selectedCountry!;
+
+                                                                            // Extract quantity and cost details
+                                                                            String selectedQuantity = selectedQuantityType == "minQuantity"
+                                                                                ? exportDetails['exportPricing']['minQuantity']
+                                                                                : exportDetails['exportPricing']['maxQuantity'];
+                                                                            String costPerWeight = selectedQuantityType == "minQuantity"
+                                                                                ? exportDetails['exportPricing']['costPerWeightMin']
+                                                                                : exportDetails['exportPricing']['costPerWeightMax'];
+
+                                                                            // Extract insurance and port costs
+                                                                            String
+                                                                                insuranceCost =
+                                                                                exportDetails['exportPricing']['insuranceCost'];
+                                                                            String
+                                                                                portCost =
+                                                                                exportDetails['exportPricing']['portCost'];
+
+                                                                            // Navigate to ExportBilling page with all details
+                                                                            Navigator.pushReplacement(
+                                                                              context,
+                                                                              MaterialPageRoute(
+                                                                                builder: (context) => ExportBilling(
+                                                                                  productId: productId,
+                                                                                  // Pass productId
+                                                                                  productName: productName,
+                                                                                  image: image,
+                                                                                  vendorId: vendorId,
+                                                                                  selectedDestination: selectedDestination,
+                                                                                  selectedPlan: selectedQuantityType!,
+                                                                                  selectedQuantity: selectedQuantity,
+                                                                                  costPerWeight: costPerWeight,
+                                                                                  insuranceCost: insuranceCost,
+                                                                                  portCost: portCost,
+                                                                                ),
+                                                                              ),
+                                                                            );
+
+                                                                            // Show a confirmation message
+                                                                            ScaffoldMessenger.of(context).showSnackBar(
+                                                                              SnackBar(content: Text("Product selected for export")),
+                                                                            );
+                                                                          },
+                                                                          child:
+                                                                              Text("Confirm"),
+                                                                        )
+                                                                      ],
+                                                                    ),
+                                                                  );
+                                                                }
+                                                              : null,
+                                                      child: Text("Select"),
+                                                    ),
+                                                  ],
+                                                );
+                                              }).toList(),
+                                            )
+                                          else
+                                            Text(
+                                              "No exporting details available",
+                                              style: TextStyle(
+                                                  color: Colors.white70),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  SizedBox(height: 10),
+
+                  if (productData?['isSubscription'] == true ||
+                      showSubscriptionCard)
+                    Card(
+                      color: Color(0xFF033015),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Subscription Plans",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 10),
+
+                            // Loading or empty state handling
+                            if (productData?['subscriptionDetails'] == null)
+                              Center(child: CircularProgressIndicator())
+                            else if ((productData!['subscriptionDetails']
+                                    as List)
+                                .isEmpty)
+                              Text(
+                                "No subscription plans available",
+                                style: TextStyle(color: Colors.white70),
+                              )
+                            else
+                              Column(
+                                children: (productData!['subscriptionDetails']
+                                        as List<dynamic>)
+                                    .map<Widget>((plan) {
+                                  final planData = plan as Map<String, dynamic>;
+                                  return Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Radio(
+                                            value: planData['duration'],
+                                            groupValue: selectedPlan,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                selectedPlan = value.toString();
+                                                price = planData['price'];
+                                                quantity = int.tryParse(
+                                                        planData['quantity']
+                                                                ?.toString() ??
+                                                            '1') ??
+                                                    1;
+                                                selectedPlanDetails =
+                                                    planData; // Store the complete plan details
+                                                updatePrice();
+                                              });
+                                            },
+                                          ),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  "${_formatDuration(planData['duration'])} - ₹${planData['price']}",
+                                                  style: TextStyle(
+                                                      color: Colors.white),
+                                                ),
+                                                if (planData[
+                                                            'deliveryFrequency'] !=
+                                                        null &&
+                                                    planData[
+                                                            'deliveryFrequency']
+                                                        .isNotEmpty)
+                                                  Text(
+                                                    "Delivery: ${planData['deliveryFrequency']}",
+                                                    style: TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                if (planData['quantity'] !=
+                                                    null)
+                                                  Text(
+                                                    "Quantity: ${planData['quantity']}",
+                                                    style: TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Divider(color: Colors.white54),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+
+                            SizedBox(height: 10),
+
+                            // Selected plan details section - Only shown when a plan is selected
+                            if (selectedPlan != null &&
+                                selectedPlanDetails != null)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Selected Plan Details',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  SizedBox(height: 10),
+                                  Container(
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${_formatDuration(selectedPlanDetails!['duration'])} Plan',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Text('Price: ',
+                                                style: TextStyle(
+                                                    color: Colors.white70)),
+                                            Text(
+                                                '₹${selectedPlanDetails!['price']}',
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ],
+                                        ),
+                                        SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Text('Quantity: ',
+                                                style: TextStyle(
+                                                    color: Colors.white70)),
+                                            Text(
+                                                selectedPlanDetails![
+                                                        'quantity'] ??
+                                                    '1',
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ],
+                                        ),
+                                        if (selectedPlanDetails![
+                                                    'deliveryFrequency'] !=
+                                                null &&
+                                            selectedPlanDetails![
+                                                    'deliveryFrequency']
+                                                .isNotEmpty)
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Text('Delivery: ',
+                                                      style: TextStyle(
+                                                          color:
+                                                              Colors.white70)),
+                                                  Text(
+                                                      selectedPlanDetails![
+                                                          'deliveryFrequency'],
+                                                      style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        SizedBox(height: 8),
+                                        Text(
+                                          selectedPlan == 'oneYear'
+                                              ? 'Enjoy uninterrupted service for a full year with this subscription.'
+                                              : 'Perfect for short-term needs with flexible commitment.',
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        SizedBox(height: 16),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.green,
+                                              foregroundColor: Colors.white,
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            onPressed: () {
+                                              //   _confirmSubscriptionPayment();
+                                              Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        SubscriptionConfirmationPage(
+                                                          productId: widget.productId,
+                                                          subscriptionDuration: selectedPlan,
+                                                        ),
+                                                  ));
+                                            },
+                                            child: Text(
+                                              'Confirm Your Plan',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  SizedBox(height: 40),
+
+                  SizedBox(height: 50),
+                ],
+              ),
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              otherParticipantId: vendorId!,
+              displayName: vendorName,
+            ),
+          ),
+        ),
+        backgroundColor: Colors.grey,
+        child: Icon(Icons.chat, color: Color(0xFF033015)),
+        tooltip: 'Message us',
+      ),
+    );
+  }
+}

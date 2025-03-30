@@ -1,0 +1,203 @@
+import 'package:flutter/material.dart';
+import 'package:dup/controller/regi_controller.dart';
+import 'login.dart';
+
+class Regi extends StatefulWidget {
+  const Regi({super.key});
+
+  @override
+  State<Regi> createState() => _RegiState();
+}
+
+class _RegiState extends State<Regi> {
+  final AuthController _authController = AuthController();
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  String profileImage = 'https://firebasestorage.googleapis.com/v0/b/dup-a79d6.firebasestorage.app/o/user.jpg?alt=media&token=6cfb58c0-60cd-4a5d-b77c-b5a37f5dc1f8';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  // Regex patterns
+  final RegExp _nameRegExp = RegExp(r'^[a-zA-Z ]+$');
+  final RegExp _emailRegExp = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+  final RegExp _passwordRegExp = RegExp(
+      r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$');
+
+  void _handleSubmit() async {
+    if (_formKey.currentState!.validate()) {
+      String? errorMessage = await _authController.registerUser(
+        _nameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        profileImage,
+      );
+
+      if (errorMessage == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Registration Successful")),
+        );
+
+        Future.delayed(const Duration(seconds: 1), () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => UserForm()),
+          );
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 85,
+        backgroundColor: const Color(0xFF033015),
+        title: const Text(
+          "Sign Up",
+          style: TextStyle(
+            fontStyle: FontStyle.italic,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Card(
+              elevation: 25,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              shadowColor: Colors.green,
+              margin: const EdgeInsets.only(bottom: 25),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Name',
+                          prefixIcon: const Icon(Icons.person, color: Colors.brown),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your name';
+                          }
+                          if (!_nameRegExp.hasMatch(value)) {
+                            return 'Name can only contain letters and spaces';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: const Icon(Icons.email, color: Colors.brown),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                          ),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!_emailRegExp.hasMatch(value)) {
+                            return 'Please enter a valid email address';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock, color: Colors.brown),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                          ),
+                          helperText: 'At least 8 chars with 1 uppercase, 1 lowercase, 1 number & 1 special char',
+                        ),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a password';
+                          }
+                          if (!_passwordRegExp.hasMatch(value)) {
+                            return 'Password must contain:\n- 8+ characters\n- 1 uppercase\n- 1 lowercase\n- 1 number\n- 1 special character';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        decoration: InputDecoration(
+                          labelText: 'Confirm Password',
+                          prefixIcon: const Icon(Icons.lock, color: Colors.brown),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                          ),
+                        ),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          if (value != _passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _handleSubmit,
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all(Colors.brown),
+                          foregroundColor: MaterialStateProperty.all(Colors.white),
+                        ),
+                        child: const Text('Register'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
