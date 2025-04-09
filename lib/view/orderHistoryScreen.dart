@@ -16,7 +16,7 @@ class _CombinedOrderHistoryScreenState extends State<CombinedOrderHistoryScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('All Orders'),
+        title: const Text('Thanks for Ordering – Here is Your List!',style: TextStyle(fontSize: 15),),
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _combinedOrdersStream(),

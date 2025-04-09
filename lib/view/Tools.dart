@@ -149,7 +149,7 @@ class _ListOfToolsState extends State<ListOfTools> {
                             (tool['imageUrls'] as List).isNotEmpty)
                             ? Image.network(
                           tool['imageUrls'][0],
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                           loadingBuilder: (context, child, loadingProgress) {
                             if (loadingProgress == null) return child;
                             return Center(child: CircularProgressIndicator());

@@ -78,7 +78,17 @@ class _InternationalState extends State<International> {
         itemCount: exportingProducts.length,
         itemBuilder: (context, index) {
           final product = exportingProducts[index];
-          return Card(
+          return
+            GestureDetector(
+              onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProductDetail(productId: product['id']),
+              ),
+            );
+          },
+          child:Card(
             elevation: 8,
             shadowColor: Colors.black54,
             color: Colors.white,
@@ -117,6 +127,7 @@ class _InternationalState extends State<International> {
                 ],
               ),
             ),
+          ),
           );
         },
       ),

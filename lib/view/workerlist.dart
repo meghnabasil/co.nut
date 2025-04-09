@@ -22,14 +22,15 @@ class _WorkersListState extends State<WorkersList> {
       body: Column(
         children: [
           Card(
+            color: Colors.grey,
             elevation: 15,
             shadowColor: Colors.green,
-            margin: EdgeInsets.all(10),
+            margin: EdgeInsets.all(9),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
               child: TextField(
                 onChanged: (value) {
                   setState(() {
@@ -144,6 +145,7 @@ class _WorkersListState extends State<WorkersList> {
                         );
                       },
                       child: Card(
+                        color: Colors.grey[900],
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -164,15 +166,18 @@ class _WorkersListState extends State<WorkersList> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
+                                        color: Colors.white
                                       ),
                                     ),
-                                    Text(
-                                      worker.jobTitle,
+                                    SizedBox(height: 8),
+                                    Text("Job Type : ${worker.jobTitle}",
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.grey[600],
+                                        color: Colors.grey[300],
                                       ),
                                     ),
+                                    SizedBox(height: 8),
+                                    Text("City: ${worker.wcity}",style: TextStyle(fontSize: 14,color: Colors.grey[300]),),
                                     SizedBox(height: 8),
                                     Container(
                                       width: double.infinity,
@@ -194,15 +199,15 @@ class _WorkersListState extends State<WorkersList> {
                                   launchUrl(Uri.parse('tel:${worker.wphone}'));
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color(0xFF033015),
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.grey,
+                                  foregroundColor: Color(0xFF033015),
                                 ),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.phone, color: Colors.white),
-                                    SizedBox(width: 7),
-                                    Text("Call", style: TextStyle(fontSize: 9)),
+                                    Icon(Icons.phone, color: Color(0xFF033015)),
+                                    SizedBox(width: 9),
+                                    Text("Call", style: TextStyle(fontSize: 10)),
                                   ],
                                 ),
                               ),

@@ -135,7 +135,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        elevation: 10,
+                        elevation: 20,
                         shadowColor: Colors.green,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,8 +148,9 @@ class _ProductScreenState extends State<ProductScreen> {
                                   product['images'].isNotEmpty
                                       ? product['images'][0]
                                       : 'https://via.placeholder.com/150',
+
                                   fit: BoxFit.cover,
-                                  width: double.infinity,
+                                   width: double.infinity,
                                 ),
                               ),
                             ),

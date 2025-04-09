@@ -360,7 +360,7 @@ class _ProductDetailState extends State<ProductDetail> {
                 children: [
                   Text(
                     productData?['name'] ?? 'Product Name',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 10),
 
@@ -369,10 +369,10 @@ class _ProductDetailState extends State<ProductDetail> {
                           itemCount: imageUrls.length,
                           itemBuilder: (context, index, realIndex) {
                             return ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(30),
                               child: Image.network(
                                 imageUrls[index],
-                                fit: BoxFit.cover,
+                                fit: BoxFit.contain,
                                 width: double.infinity,
                                 loadingBuilder:
                                     (context, child, loadingProgress) {

@@ -65,7 +65,7 @@ class _SplashState extends State<Splash> {
           Center(
           child:
           //Image.asset("asset/meg.jpeg"),
-          Lottie.asset('asset/co..json'),
+          Lottie.asset('asset/ship.json'),
         ),
       ),  );
     }

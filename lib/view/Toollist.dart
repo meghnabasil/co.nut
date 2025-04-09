@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
 class ToolsDetail extends StatefulWidget {
-  final String toolId; // Fetch tool using ID
+  final String toolId;
 
   ToolsDetail({required this.toolId});
 
@@ -37,6 +38,43 @@ class _ToolsDetailState extends State<ToolsDetail> {
     }
   }
 
+  Future<void> addToCart() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print("User not logged in");
+        return;
+      }
+
+      String uid = user.uid;
+
+      CollectionReference cartCollection = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('cart');
+
+      await cartCollection.add({
+        'userId': uid,
+        'toolId': widget.toolId,
+        'name': toolData!['name'],
+        'price': toolData!['price'],
+        'imageUrl': (toolData!['imageUrls'] as List).isNotEmpty
+            ? toolData!['imageUrls'][0]
+            : '',
+        'addedAt': Timestamp.now(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Added to cart!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add to cart.')),
+      );
+      print('Error: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,8 +97,6 @@ class _ToolsDetailState extends State<ToolsDetail> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
-
-            // **Carousel Slider for Images**
             if (toolData!['imageUrls'] != null &&
                 toolData!['imageUrls'] is List &&
                 (toolData!['imageUrls'] as List).isNotEmpty)
@@ -82,42 +118,36 @@ class _ToolsDetailState extends State<ToolsDetail> {
               )
             else
               Center(
-                child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
+                child: Icon(Icons.broken_image,
+                    size: 80, color: Colors.grey),
               ),
-
             SizedBox(height: 20),
             Divider(thickness: 2, color: Colors.grey),
             SizedBox(height: 10),
-
-            // **Tool Company**
             Text(
               toolData!['company'] ?? 'No Company',
               style: TextStyle(color: Colors.grey[600]),
             ),
             SizedBox(height: 10),
-
-            // **Price**
             Text(
               "₹${toolData!['price']?.toString() ?? 'N/A'}",
               style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF380230)),
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF380230),
+              ),
             ),
-
             SizedBox(height: 5),
             Text(
               'This price includes all applicable taxes and fees.',
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
-
             SizedBox(height: 40),
-
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: addToCart,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF033015),
                       foregroundColor: Color(0xFFFFFFFF),
@@ -128,7 +158,9 @@ class _ToolsDetailState extends State<ToolsDetail> {
                 SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      // Add Buy Now functionality here
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF033015),
                       foregroundColor: Color(0xFFFFFFFF),

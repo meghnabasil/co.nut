@@ -8,6 +8,7 @@
   import 'package:dup/view/onDoorstep.dart';
   import 'package:dup/view/productlist.dart';
   import 'package:dup/view/subscription.dart';
+import 'package:dup/view/user_view_subscriptions.dart';
   import 'package:dup/view/vendor_home.dart';
   import 'package:dup/view/videoplayer.dart';
   import 'package:dup/view/workerlist.dart';
@@ -114,8 +115,8 @@
 
     final List<String> bannerImages = [
       'asset/banner.jpeg',
-      'asset/banner.jpeg',
-      'asset/banner.jpeg',
+      'asset/subndexp.jpg',
+      'asset/banner2.jpg',
     ];
 
     void _navigateToPage(BuildContext context, Widget page) {
@@ -326,7 +327,7 @@
               ),
               const SizedBox(height: 35),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                padding: const EdgeInsets.symmetric(vertical: 19.0),
                 child: CarouselSlider(
                   options: CarouselOptions(
                     height: 100,
@@ -352,7 +353,14 @@
                         padding: const EdgeInsets.symmetric(horizontal: 5.0),
                         child: Column(
                           children: [
-                            ClipRRect(
+                          Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: Colors.grey[200],
+                          ),
+                          child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
                               child: Image.asset(
                                 category['image']!,
@@ -360,6 +368,7 @@
                                 fit: BoxFit.cover,
                               ),
                             ),
+                          ),
                             const SizedBox(height: 10),
                             // Spacing between image and text
                             Text(
@@ -375,38 +384,17 @@
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                "Go Natural. Go Co.Nut! 🥥",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF033015),
-                ),
-              ),
-              const SizedBox(height: 35),
-
-              if (videoAdvertisements.isNotEmpty) ...[
-                SizedBox(height: 10),
-                CarouselSlider(
-                  options: CarouselOptions(
-                    height: 200,
-                    autoPlay: false,
-                    enlargeCenterPage: true,
-                    aspectRatio: 16 / 9,
-                    viewportFraction: 0.9,
-                  ),
-                  items: videoAdvertisements.map((ad) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(13),
-                      child: ChewieVideoWidget(videoUrl: ad['video']!),
-                    );
-                  }).toList(),
-                ),
-              ],
-
-              const SizedBox(height: 60),
+              // const SizedBox(height: 20),
+              // const Text(
+              //   "Go Natural. Go Co.Nut! 🥥",
+              //   textAlign: TextAlign.center,
+              //   style: TextStyle(
+              //     fontSize: 20,
+              //     fontWeight: FontWeight.bold,
+              //     color: Color(0xFF033015),
+              //   ),
+              // ),
+               const SizedBox(height: 35),
 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -460,11 +448,12 @@
                         );
                       },
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(13),
+                        borderRadius: BorderRadius.circular(30),
                         child: Image.network(
                           ad['image']!,
                           width: double.infinity,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain, // Ensures the entire image fits inside
+
                         ),
                       ),
                     );
@@ -587,7 +576,7 @@
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => Subscription()),
+                                builder: (context) => MySubscriptionsPage()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -638,6 +627,28 @@
                 ),
               ),
               const SizedBox(height: 80),
+
+              if (videoAdvertisements.isNotEmpty) ...[
+                SizedBox(height: 10),
+                CarouselSlider(
+                  options: CarouselOptions(
+                    height: 200,
+                    autoPlay: false,
+                    enlargeCenterPage: true,
+                    aspectRatio: 16 / 9,
+                    viewportFraction: 0.9,
+                  ),
+                  items: videoAdvertisements.map((ad) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(13),
+                      child: ChewieVideoWidget(videoUrl: ad['video']!),
+                    );
+                  }).toList(),
+                ),
+              ],
+
+              const SizedBox(height: 60),
+
             ],
           ),
         ),
@@ -649,21 +660,29 @@
         onTap: () => _navigateToPage(context, page),
         child: Container(
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFF033015), width: 2),
+            color: Colors.grey[850], // dark grey background
             borderRadius: BorderRadius.circular(40),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 100),
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 90),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.directions_boat, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
       );
     }
+
 
     Widget _buildCard(
         BuildContext context, String title, String imagePath, Widget page) {

@@ -15,6 +15,7 @@ class History extends StatefulWidget {
 class _HistoryState extends State<History> {
   String? userId;
 
+  @override
   void initState() {
     super.initState();
     _getUserId();
@@ -24,7 +25,7 @@ class _HistoryState extends State<History> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       setState(() {
-        userId = user.uid; // Assign the user ID
+        userId = user.uid;
       });
     }
   }
@@ -32,50 +33,40 @@ class _HistoryState extends State<History> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2, // Number of tabs
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Color(0xFF033015),
           iconTheme: IconThemeData(color: Colors.white),
-          // AppBar color (greenAccent)
           toolbarHeight: 80,
-          // Custom AppBar height
-          title: const Text(
-            '',
-            style: TextStyle(color: Colors.white),
+          title: Image.asset(
+            'asset/img.png',
+            height: 19,
           ),
-
+          centerTitle: true ,
           leading: IconButton(
-              icon: Icon(Icons.home),
-              onPressed: () {
-                // Navigate back to HomeScreen
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => BottomBarScreen()),
-                  (route) => false,
-                ); // Removes all previous routes
-              }),
-
+            icon: Icon(Icons.home),
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => BottomBarScreen()),
+                    (route) => false,
+              );
+            },
+          ),
           bottom: PreferredSize(
-            preferredSize: Size.fromHeight(50), // Height of the TabBar
+            preferredSize: Size.fromHeight(50),
             child: Container(
-              color: Colors.white, // TabBar color (blueAccent)
+              color: Color(0xFF033015),
               child: TabBar(
-                indicatorColor: Colors.brown,
-                // White indicator line color
-                indicatorWeight: 5,
-                // Thickness of the indicator line
-                labelColor: Colors.black,
-                // Color for selected tab icons
-                unselectedLabelColor: Colors.black,
+                indicatorColor: Colors.white,
+                indicatorWeight: 4,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
                 labelPadding: EdgeInsets.symmetric(horizontal: 10.0),
-                // Color for unselected tab icons
                 tabs: const [
-                  // Tab(icon: Icon(Icons.add_shopping_cart_outlined), text: 'items' ),
-                  Tab(icon: Icon(Icons.history), text: 'order history'),
-                  Tab(
-                      icon: Icon(Icons.delivery_dining),
-                      text: 'booking history'),
+                  Tab(icon: Icon(Icons.history), text: 'Order History'),
+                  Tab(icon: Icon(Icons.delivery_dining), text: 'Booking History'),
                 ],
               ),
             ),
@@ -89,8 +80,6 @@ class _HistoryState extends State<History> {
                   userId != null
                       ? CombinedOrderHistoryScreen(userId: userId!)
                       : const Center(child: CircularProgressIndicator()),
-
-                  // Show BookingHistoryPage only if userId is available
                   userId != null
                       ? BookingHistoryScreen(userId: userId!)
                       : const Center(child: CircularProgressIndicator()),

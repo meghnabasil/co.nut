@@ -13,6 +13,9 @@ class _VendorSubscriptionOrderTabsState extends State<VendorSubscriptionOrderTab
   List<Map<String, dynamic>> _subscriptionOrders = [];
   bool _isLoading = true;
 
+  static const String noOrdersText = "No Orders yet";
+  static const String fetchingOrderError = "Error fetching orders: ";
+
   @override
   void initState() {
     super.initState();
@@ -44,36 +47,7 @@ class _VendorSubscriptionOrderTabsState extends State<VendorSubscriptionOrderTab
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching orders: $e')),
-      );
-    }
-  }
-
-  void _updateOrderStatus(String orderId, String newStatus) async {
-    try {
-      setState(() => _isLoading = true);
-
-      await FirebaseFirestore.instance
-          .collection('subscriptionOrders')
-          .doc(orderId)
-          .update({'subscriptionStatus': newStatus});
-
-      // Update local state
-      setState(() {
-        final index = _subscriptionOrders.indexWhere((order) => order['id'] == orderId);
-        if (index != -1) {
-          _subscriptionOrders[index]['subscriptionStatus'] = newStatus;
-        }
-        _isLoading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Order status updated successfully')),
-      );
-    } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating order: $e')),
+        SnackBar(content: Text('$fetchingOrderError$e')),
       );
     }
   }
@@ -81,11 +55,10 @@ class _VendorSubscriptionOrderTabsState extends State<VendorSubscriptionOrderTab
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _subscriptionOrders.isEmpty
-          ? const Center(child: Text("No Orders yet"))
+          ? const Center(child: Text(noOrdersText))
           : ListView.builder(
         padding: const EdgeInsets.all(8),
         itemCount: _subscriptionOrders.length,
@@ -106,15 +79,13 @@ class _VendorSubscriptionOrderTabsState extends State<VendorSubscriptionOrderTab
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   order['productName'] ?? 'Product',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Chip(
                   label: Text(
@@ -127,63 +98,45 @@ class _VendorSubscriptionOrderTabsState extends State<VendorSubscriptionOrderTab
             ),
             const SizedBox(height: 8),
             _buildOrderDetailRow("Order ID", order['id']),
-            _buildOrderDetailRow("Customer", order['deliveryDetails']['name'] ?? 'N/A'),
-            _buildOrderDetailRow("Phone", order['deliveryDetails']['phone'] ?? 'N/A'),
+            _buildOrderDetailRow("Customer", order['deliveryDetails']?['name'] ?? 'N/A'),
+            _buildOrderDetailRow("Phone", order['deliveryDetails']?['phone'] ?? 'N/A'),
             _buildOrderDetailRow("Plan", _formatDuration(order['planDuration'])),
-            _buildOrderDetailRow("Price", "₹${order['price']?.toStringAsFixed(2) ?? '0.00'}"),
-            _buildOrderDetailRow("Quantity", order['quantity'] ?? 'N/A'),
+            _buildOrderDetailRow("Price", "₹${(order['price'] ?? 0).toString()}"),
+            _buildOrderDetailRow("Quantity", order['quantity']?.toString() ?? 'N/A'),
             _buildOrderDetailRow("Frequency", order['deliveryFrequency'] ?? 'N/A'),
             _buildOrderDetailRow("Start Date", _formatDate(order['startDate'])),
             _buildOrderDetailRow("Payment Status", order['paymentStatus'] ?? 'N/A'),
 
-            const SizedBox(height: 12),
-            const Divider(),
+            const Divider(height: 24),
 
             // Delivery Address
-            const Text(
-              "Delivery Address:",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text("${order['deliveryDetails']['address'] ?? ''}"),
-            Text("${order['deliveryDetails']['city'] ?? ''}, ${order['deliveryDetails']['state'] ?? ''}"),
-            Text("Pincode: ${order['deliveryDetails']['pincode'] ?? ''}"),
-            if (order['deliveryDetails']['instructions'] != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  "Instructions: ${order['deliveryDetails']['instructions']}",
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ),
-
-            const SizedBox(height: 12),
-            if (order['subscriptionStatus'] == 'active')
-              Row(
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text("Delivery Address", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _updateOrderStatus(order['id'], 'paused'),
-                      child: const Text('Pause Subscription'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _updateOrderStatus(order['id'], 'cancelled'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
+                  Text(order['deliveryDetails']?['address'] ?? ''),
+                  Text("${order['deliveryDetails']?['city'] ?? ''}, ${order['deliveryDetails']?['state'] ?? ''}"),
+                  Text("Pincode: ${order['deliveryDetails']?['pincode'] ?? ''}"),
+                  if (order['deliveryDetails']?['instructions'] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        "Instructions: ${order['deliveryDetails']['instructions']}",
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
-                      child: const Text('Cancel Subscription'),
                     ),
-                  ),
                 ],
               ),
-            if (order['subscriptionStatus'] == 'paused')
-              OutlinedButton(
-                onPressed: () => _updateOrderStatus(order['id'], 'active'),
-                child: const Text('Resume Subscription'),
-              ),
+            ),
+
+            const SizedBox(height: 12),
+            // Just show current status
+            Text(
+              "Subscription Status: ${(order['subscriptionStatus'] ?? 'N/A').toUpperCase()}",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),

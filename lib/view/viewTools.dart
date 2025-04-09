@@ -143,7 +143,7 @@ class _ToolDisplayPageState extends State<ToolDisplayPage> {
                         imageList[index],
                         width: 322,
                         height: 200,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                       ),
                     ),
                   );

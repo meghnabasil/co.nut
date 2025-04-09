@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -191,7 +193,10 @@ class _ChatScreenState extends State<ChatScreen> {
         backgroundColor: Color(0xFF033015),
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: Column(
+    body: Container(
+    color: Colors.grey, // Very light green
+    child:
+    Column(
         children: [
           Expanded(
             child: _chatRoomId == null
@@ -235,20 +240,21 @@ class _ChatScreenState extends State<ChatScreen> {
                     controller: _messageController,
                     decoration: InputDecoration(
                       hintText: 'Type your message...',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30),),
                     ),
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.send),
+                  icon: Icon(Icons.send,color: Color(0xFF033015),),
                   onPressed: _sendMessage,
                 ),
               ],
             ),
           ),
         ],
-      ),
+    ),
+    ),
     );
   }
 }

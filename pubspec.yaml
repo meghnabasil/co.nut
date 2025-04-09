@@ -96,6 +96,10 @@ flutter:
      - asset/image.png
      - asset/banner.jpeg
      - asset/img.png
+     - asset/ship.json
+     - asset/chatback.png
+     - asset/subndexp.jpg
+     - asset/banner2.jpg
      - asset/chutny.jpg
      - asset/coconut.jpg
      - asset/coconut powder.jpg
