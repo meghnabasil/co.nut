@@ -37,6 +37,9 @@ class _VendorSubscriptionOrderTabsState extends State<VendorSubscriptionOrderTab
           'id': doc.id,
           ...data,
           'startDate': (data['startDate'] as Timestamp).toDate(),
+          'nextDeliveryDate': data['nextDeliveryDate'] != null
+              ? (data['nextDeliveryDate'] as Timestamp).toDate()
+              : null,
         };
       }).toList();
 
@@ -48,6 +51,37 @@ class _VendorSubscriptionOrderTabsState extends State<VendorSubscriptionOrderTab
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$fetchingOrderError$e')),
+      );
+    }
+  }
+
+  Future<void> _updateDeliveryStatus(String orderId, String newStatus) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('subscriptionOrders')
+          .doc(orderId)
+          .update({'deliveryStatus': newStatus});
+      _fetchSubscriptionOrders();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating status: $e')),
+      );
+    }
+  }
+
+  Future<void> _updateNextDeliveryDate(String orderId, DateTime newDate) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('subscriptionOrders')
+          .doc(orderId)
+          .update({'nextDeliveryDate': Timestamp.fromDate(newDate)});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Next delivery date updated')),
+      );
+      _fetchSubscriptionOrders();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating date: $e')),
       );
     }
   }
@@ -71,6 +105,9 @@ class _VendorSubscriptionOrderTabsState extends State<VendorSubscriptionOrderTab
   }
 
   Widget _buildOrderCard(Map<String, dynamic> order) {
+    String selectedStatus = order['deliveryStatus'] ?? 'Pending';
+    DateTime? nextDeliveryDate = order['nextDeliveryDate'];
+
     return Card(
       margin: const EdgeInsets.all(8),
       elevation: 3,
@@ -131,11 +168,53 @@ class _VendorSubscriptionOrderTabsState extends State<VendorSubscriptionOrderTab
               ),
             ),
 
-            const SizedBox(height: 12),
-            // Just show current status
-            Text(
-              "Subscription Status: ${(order['subscriptionStatus'] ?? 'N/A').toUpperCase()}",
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            const Divider(height: 24),
+
+            const Text("Delivery Management", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+
+            _buildOrderDetailRow("Current Status", selectedStatus),
+            _buildOrderDetailRow(
+              "Next Delivery Date",
+              nextDeliveryDate != null ? _formatDate(nextDeliveryDate) : "Not set",
+            ),
+
+            const SizedBox(height: 10),
+
+            Row(
+              children: [
+                const Text("Update Status: "),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: selectedStatus,
+                  items: ['Pending', 'Delivered']
+                      .map((status) => DropdownMenuItem(value: status, child: Text(status)))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      _updateDeliveryStatus(order['id'], value);
+                    }
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            ElevatedButton.icon(
+              icon: const Icon(Icons.calendar_today),
+              label: const Text("Set Next Delivery Date"),
+              onPressed: () async {
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: nextDeliveryDate ?? DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  await _updateNextDeliveryDate(order['id'], picked);
+                }
+              },
             ),
           ],
         ),
@@ -150,7 +229,7 @@ class _VendorSubscriptionOrderTabsState extends State<VendorSubscriptionOrderTab
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 130,
             child: Text(
               "$label:",
               style: const TextStyle(fontWeight: FontWeight.bold),

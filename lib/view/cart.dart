@@ -1,3 +1,4 @@
+import 'package:dup/view/Favourites.dart';
 import 'package:dup/view/shipping_address.dart';
 import 'package:flutter/material.dart';
 import '../controller/cart_contoller.dart';
@@ -64,11 +65,23 @@ class _CartState extends State<Cart> {
       appBar: AppBar(
         title: Text(
           'My Cart',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontSize: 19),
         ),
         backgroundColor: Color(0xFF033015),
         iconTheme: IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.favorite, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FavoriteListPage()),
+              );
+            },
+          ),
+        ],
       ),
+
       body: cartItems.isEmpty
           ? Center(child: Text("Your cart is empty"))
           : Column(

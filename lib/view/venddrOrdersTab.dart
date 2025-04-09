@@ -32,8 +32,7 @@ class _VendorOrdersTabState extends State<VendorOrdersTab> {
   }
 
   void _scrollListener() {
-    if (_scrollController.position.pixels ==
-            _scrollController.position.maxScrollExtent &&
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent &&
         _hasMore &&
         !_isLoading) {
       _fetchVendorOrders(loadMore: true);
@@ -73,7 +72,6 @@ class _VendorOrdersTabState extends State<VendorOrdersTab> {
       }
 
       _lastDocument = snapshot.docs.last;
-
       final List<Map<String, dynamic>> validOrders = [];
 
       for (final doc in snapshot.docs) {
@@ -139,6 +137,44 @@ class _VendorOrdersTabState extends State<VendorOrdersTab> {
       );
     }
   }
+  Future<void> _updateDeliveryStatus(String orderId, String newStatus) async {
+    final docRef = FirebaseFirestore.instance.collection('orders').doc(orderId);
+
+    try {
+      final snapshot = await docRef.get();
+      final orderData = snapshot.data();
+      final products = List<Map<String, dynamic>>.from(orderData?['products'] ?? []);
+
+      // Update each product's status
+      final updatedProducts = products.map((product) {
+        return {
+          ...product,
+          'status': newStatus,
+        };
+      }).toList();
+
+      await docRef.set({
+        'vendorDeliveryStatus': {
+          widget.vendorID: newStatus,
+        },
+        'products': updatedProducts, // <-- this is the important part
+      }, SetOptions(merge: true));
+
+      setState(() {
+        final index = _vendorOrders.indexWhere((order) => order['id'] == orderId);
+        if (index != -1) {
+          _vendorOrders[index]['vendorDeliveryStatus'] ??= {};
+          _vendorOrders[index]['vendorDeliveryStatus'][widget.vendorID] = newStatus;
+          _vendorOrders[index]['products'] = updatedProducts; // Update local state too
+        }
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update status: $e')),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -146,32 +182,34 @@ class _VendorOrdersTabState extends State<VendorOrdersTab> {
       body: _isLoading && _vendorOrders.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : _vendorOrders.isEmpty
-              ? const Center(child: Text("No orders containing your products"))
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    await _fetchVendorOrders();
-                  },
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(8),
-                    itemCount: _vendorOrders.length + (_hasMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == _vendorOrders.length) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-                      return _buildOrderCard(_vendorOrders[index]);
-                    },
-                  ),
+          ? const Center(child: Text("No orders containing your products"))
+          : RefreshIndicator(
+        onRefresh: () async {
+          await _fetchVendorOrders();
+        },
+        child: ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(8),
+          itemCount: _vendorOrders.length + (_hasMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == _vendorOrders.length) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
                 ),
+              );
+            }
+            return _buildOrderCard(_vendorOrders[index]);
+          },
+        ),
+      ),
     );
   }
 
   Widget _buildOrderCard(Map<String, dynamic> order) {
+    var currentStatus = (order['vendorDeliveryStatus'] ?? {})[widget.vendorID] ?? "Pending";
+
     return Card(
       margin: const EdgeInsets.all(8),
       elevation: 3,
@@ -205,21 +243,47 @@ class _VendorOrdersTabState extends State<VendorOrdersTab> {
             _buildOrderDetailRow("Date", _formatDate(order['createdAt'])),
             _buildOrderDetailRow(
                 "Payment", order['paymentId'] != null ? "Paid" : "Pending"),
-
-            // Add shipping address section here
             const SizedBox(height: 12),
             const Divider(),
             const Text("Shipping Address:",
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             _buildAddressText(order['shippingAddress']),
-
             const SizedBox(height: 12),
             const Divider(),
             const Text("Your Products:",
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             ...(order['products'] as List<dynamic>).map(_buildProductItem),
+
+            const Divider(),
+            const SizedBox(height: 12),
+            const Text("Delivery Status:",
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+      DropdownButton<String>(
+        value: currentStatus,
+        onChanged: (String? newValue) {
+          if (newValue != null) {
+            setState(() {
+              currentStatus = newValue;
+            });
+            _updateDeliveryStatus(order['id'], newValue);
+            final products = order['products'] ?? [];
+            // Update status for each product in the order
+            for (var product in products) {
+              product['status'] = newValue;
+            }
+          }
+        },
+        items: ['Pending', 'On the Way', 'Delivered']
+            .map<DropdownMenuItem<String>>((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+      ),
           ],
         ),
       ),
@@ -262,14 +326,14 @@ class _VendorOrdersTabState extends State<VendorOrdersTab> {
             ),
             child: productMap['imageUrl'] != null
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      productMap['imageUrl'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.shopping_bag),
-                    ),
-                  )
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                productMap['imageUrl'],
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                const Icon(Icons.shopping_bag),
+              ),
+            )
                 : const Icon(Icons.shopping_bag),
           ),
           const SizedBox(width: 12),

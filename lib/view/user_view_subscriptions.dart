@@ -37,6 +37,9 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
           'id': doc.id,
           ...data,
           'startDate': (data['startDate'] as Timestamp).toDate(),
+          'nextDeliveryDate': data['nextDeliveryDate'] != null
+              ? (data['nextDeliveryDate'] as Timestamp).toDate()
+              : null,
         };
       }).toList();
 
@@ -72,7 +75,11 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("My Subscriptions",style:TextStyle(color: Colors.white),),backgroundColor:Color(0xFF033015) ,iconTheme: IconThemeData(color: Colors.white),),
+      appBar: AppBar(
+        title: const Text("My Subscriptions", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFF033015),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _userSubscriptions.isEmpty
@@ -121,7 +128,6 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
             ),
             const SizedBox(height: 8),
 
-            // Subscription Info
             _buildRow("Plan", _formatDuration(order['planDuration'])),
             _buildRow("Price", "₹${order['price']?.toStringAsFixed(2) ?? '0.00'}"),
             _buildRow("Quantity", order['quantity']?.toString() ?? 'N/A'),
@@ -133,7 +139,7 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
             const Divider(),
 
             // Delivery Address
-            const Text("Delivery Address:", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text("Delivery Address", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text(order['deliveryDetails']['address'] ?? ''),
             Text("${order['deliveryDetails']['city'] ?? ''}, ${order['deliveryDetails']['state'] ?? ''}"),
@@ -146,6 +152,14 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
                   style: TextStyle(color: Colors.grey[600]),
                 ),
               ),
+
+            const SizedBox(height: 12),
+
+            //  Delivery status Section
+            const Text("Delivery Status", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            _buildRow("Delivery Status", (order['deliveryStatus'] ?? 'Pending').toUpperCase()),
+            _buildRow("Next Delivery Date", _formatDate(order['nextDeliveryDate'])),
 
             const SizedBox(height: 12),
 
@@ -183,7 +197,7 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 140,
             child: Text("$label:", style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
           Expanded(child: Text(value)),
@@ -203,6 +217,18 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
         return Colors.red;
       case 'completed':
         return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Color _getDeliveryStatusColor(String? status) {
+    if (status == null) return Colors.grey;
+    switch (status.toLowerCase()) {
+      case 'delivered':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
       default:
         return Colors.grey;
     }

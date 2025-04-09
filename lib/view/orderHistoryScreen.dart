@@ -225,10 +225,24 @@ class _CombinedOrderHistoryScreenState extends State<CombinedOrderHistoryScreen>
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            ...products.map((product) => _buildProductItem(
-              product['productDetails'] ?? {},
-              quantity: product['quantity'],
-            )).toList(),
+            ...products.map((product) {
+              final productDetails = product['productDetails'] ?? {};
+              final quantity = product['quantity'] ?? '';
+              final status = product['status'] ?? 'Unknown';
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildProductItem(productDetails, quantity: quantity),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Status: $status",
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                  const Divider(),
+                ],
+              );
+            }).toList(),
           ],
         ),
       ),

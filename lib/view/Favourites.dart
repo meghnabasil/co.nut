@@ -94,7 +94,8 @@ class _FavoriteListPageState extends State<FavoriteListPage> {
                   String companyName = companySnapshot.data ?? 'Unknown';
 
                   return Card(
-                    elevation: 8,
+                    color: Colors.grey[900],
+                    elevation: 10,
                     margin: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
@@ -109,25 +110,25 @@ class _FavoriteListPageState extends State<FavoriteListPage> {
                           borderRadius: BorderRadius.circular(01),
                           child: Image.network(
                             favData['imageUrl'],
-                            width: 90,
-                            height: 100,
-                            fit: BoxFit.cover,
+                            width:100,
+                            height: 150,
+                            fit: BoxFit.contain,
                           ),
                         )
                             : Icon(Icons.image, size: 60, color: Colors.grey),
                         title: Text(
                           favData['productName'] ?? "Unnamed Product",
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
+                              fontWeight: FontWeight.bold, fontSize: 18,color: Colors.white),
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             SizedBox(height: 5),
                             Text(
-                              "Company: $companyName",
+                              " $companyName",
                               style:
-                              TextStyle(fontSize: 16, color: Colors.black54),
+                              TextStyle(fontSize: 16, color: Colors.grey),
                             ),
                           ],
                         ),

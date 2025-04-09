@@ -161,9 +161,9 @@ class _VendorDashboardState extends State<VendorDashboard> {
               childAspectRatio: 1.1,
               children: [
                 // _buildCard(context, "Add Subscription", Icons.lock_clock, Subscription()),
-                _buildCard(context, "Manage Subscription", Icons.list_alt,
-                    VendorMangeSubscription()),
-                _buildCard(context, "Doorstep Delivery", Icons.delivery_dining,
+                _buildCard(context, "view products", Icons.list_alt,
+                    Viewcocoandtools()),
+                _buildCard(context, "Pick Up - Return Service", Icons.delivery_dining,
                     AddDoorstepDelivery()),
                 _buildCard(context, "Manage Bookings", Icons.calendar_today,
                     ManageBookingPage()),

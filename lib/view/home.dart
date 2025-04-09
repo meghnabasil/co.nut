@@ -212,7 +212,7 @@ import 'package:dup/view/user_view_subscriptions.dart';
                   child: Icon(Icons.person),
                 ),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF272b19),
+                  color: Colors.black87,
                 ),
               ),
               ListTile(
