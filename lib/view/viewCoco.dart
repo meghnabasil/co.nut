@@ -42,6 +42,7 @@ class _ProductDisplayPageState extends State<ProductDisplayPage> {
     return snapshot.docs.map((doc) {
       var data = doc.data() as Map<String, dynamic>;
       data['id'] = doc.id; // Add document ID to the data
+      data['stock'] = data.containsKey('stock') ? data['stock'] : 0;
       return data;
     }).toList();
   }
@@ -193,7 +194,14 @@ class _ProductDisplayPageState extends State<ProductDisplayPage> {
                   SizedBox(height: 4),
                   Text(
                     "Stock: ${product['stock'] ?? 'N/A'}",
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: (product['stock'] != null && product['stock'] < 5)
+                          ? Colors.red
+                          : Colors.green,
+                      fontWeight: (product['stock'] != null && product['stock'] < 5)
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
                   ),
                   SizedBox(width: 6),
                   Row(

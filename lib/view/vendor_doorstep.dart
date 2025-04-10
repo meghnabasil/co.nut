@@ -90,7 +90,7 @@ class _AddDoorstepDeliveryState extends State<AddDoorstepDelivery> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Add Doorstep Delivery")),
-        backgroundColor: Colors.white,
+      backgroundColor: Color(0xFF033015),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Card(

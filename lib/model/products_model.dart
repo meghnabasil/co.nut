@@ -10,6 +10,7 @@ class Product {
   final String description;
   final List<String> imageUrls;
   final Timestamp timestamp;
+  final int stock;
 
 
 
@@ -37,6 +38,7 @@ class Product {
     required this.description,
     required this.imageUrls,
     required this.timestamp,
+    required this.stock,
 
 
     this.isSubscriptionAvailable = false,
@@ -62,6 +64,7 @@ class Product {
       description: data['description'] ?? '',
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
       timestamp: data['timestamp'] ?? Timestamp.now(),
+      stock: data['stock'] ?? 0,
 
 
 
@@ -89,6 +92,7 @@ class Product {
       'description': description,
       'imageUrls': imageUrls,
       'timestamp': timestamp,
+      'stock': stock,
 
       'subscription': isSubscriptionAvailable,
       'subscriptionDuration': subscriptionDuration,

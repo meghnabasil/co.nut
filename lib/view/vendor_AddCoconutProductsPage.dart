@@ -229,7 +229,7 @@ class _AddProductPageState extends State<AddProductPage> {
           "createdAt": FieldValue.serverTimestamp(),
         };
 
-        // ✅ If 6 months subscription is selected, add its details
+        //  If 6 months subscription is selected, add its details
         if (_isSixMonthsSelected) {
           subscriptionData["sixMonths"] = {
             "price": double.tryParse(_sixMonthPriceController.text) ?? 0.0,
@@ -238,7 +238,7 @@ class _AddProductPageState extends State<AddProductPage> {
           };
         }
 
-        // ✅ If 1 year subscription is selected, add its details
+        //  If 1 year subscription is selected, add its details
         if (_isOneYearSelected) {
           subscriptionData["oneYear"] = {
             "price": double.tryParse(_oneYearPriceController.text) ?? 0.0,
@@ -247,7 +247,7 @@ class _AddProductPageState extends State<AddProductPage> {
           };
         }
 
-        // ✅ Upload data to Firestore
+        //  Upload data to Firestore
         await productRef.collection("subscriptionData").add(subscriptionData);
       }
 
@@ -363,7 +363,7 @@ class _AddProductPageState extends State<AddProductPage> {
                     SizedBox(height: 10),
 
 
-                    // ✅ Subscription Checkbox
+                    // Subscription Checkbox
                     CheckboxListTile(
                       title: Text("Subscription Available"),
                       value: _isSubscription,
@@ -373,7 +373,7 @@ class _AddProductPageState extends State<AddProductPage> {
                     if (_isSubscription) ...[
                       Text("Select Subscription Duration", style: TextStyle(fontWeight: FontWeight.bold)),
 
-                      // ✅ 6 Months Checkbox
+                      //  6 Months Checkbox
                       CheckboxListTile(
                         title: Text("6 Months"),
                         value: _isSixMonthsSelected,
@@ -402,7 +402,7 @@ class _AddProductPageState extends State<AddProductPage> {
                         SizedBox(height: 10),
                       ],
 
-                      // ✅ 1 Year Checkbox
+                      //  1 Year Checkbox
                       CheckboxListTile(
                         title: Text("1 Year"),
                         value: _isOneYearSelected,
