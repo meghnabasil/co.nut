@@ -530,14 +530,14 @@ import 'package:dup/view/user_view_subscriptions.dart';
                   mainAxisSpacing: 50,
                   childAspectRatio: 1.0,
                   children: [
-                    _buildCard(context, 'Coco Products', 'asset/all.webp',
+                    _buildCard(context, 'Coco Products', 'asset/banner2.jpg',
                         ProductScreen()),
                     _buildCard(
-                        context, 'Workers', 'asset/work.webp', WorkersList()),
-                    _buildCard(context, 'On Doorstep', 'asset/delivery.webp',
+                        context, 'Workers', 'asset/wrk.jpg', WorkersList()),
+                    _buildCard(context, 'Pickup&Return', 'asset/pkrt.jpg',
                         Doorsteps()),
                     _buildCard(
-                        context, 'Tools', 'asset/mach.webp', ListOfTools()),
+                        context, 'Tools', 'asset/to.jpg', ListOfTools()),
                   ],
                 ),
               ),
