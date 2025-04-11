@@ -204,41 +204,49 @@ class _ProductDisplayPageState extends State<ProductDisplayPage> {
                     ),
                   ),
                   SizedBox(width: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Column(
                     children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF033015)),
-                          onPressed: () => _showUpdateStockBottomSheet(product),
-                          child: Text("Update Stock", style: TextStyle(color: Colors.white,fontSize: 10)),
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF033015)),
+                              onPressed: () => _showUpdateStockBottomSheet(product),
+                              child: Text("Update Stock", style: TextStyle(color: Colors.white, fontSize: 15)),
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF033015)),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AddAdvertisementPage(productId: product['id']),
+                                  ),
+                                );
+                              },
+                              child: Text("Add Ads", style: TextStyle(color: Colors.white, fontSize: 15)),
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                          onPressed: () => _deleteProduct(product['id']),
-                          child: Text("Delete", style: TextStyle(color: Colors.white,fontSize: 10)),
-                        ),
-                      ),
-                      SizedBox(width: 5),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor:  Color(0xFF033015)),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AddAdvertisementPage(productId: product['id']),
-                              ),
-                            );
-                          },
-                          child: Text("Add Ads", style: TextStyle(color: Colors.white,fontSize: 10)),
+                      SizedBox(height: 8),
+                      Center(
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                            onPressed: () => _deleteProduct(product['id']),
+                            child: Text("Delete", style: TextStyle(color: Colors.white, fontSize: 15)),
+                          ),
                         ),
                       ),
                     ],
                   )
+
                 ],
               ),
             )

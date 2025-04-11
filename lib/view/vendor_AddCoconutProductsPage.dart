@@ -204,6 +204,8 @@ class _AddProductPageState extends State<AddProductPage> {
         "isSubscription": _isSubscription,
         "isExporting": _isExporting,
         "timestamp": FieldValue.serverTimestamp(),
+        "stock": int.tryParse(_stockController.text) ?? 0,
+
       };
 
       DocumentReference productRef = await FirebaseFirestore.instance

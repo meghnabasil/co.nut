@@ -73,8 +73,8 @@ class _VendorDashboardState extends State<VendorDashboard> {
 
   final List<String> carouselImages = [
     'asset/banner.jpeg',
-    'asset/banner.jpeg',
-    'asset/banner.jpeg',
+    'asset/banner2.jpg',
+    'asset/subndexp.jpg',
   ];
 
   @override

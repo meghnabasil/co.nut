@@ -117,7 +117,7 @@ class _InternationalState extends State<International> {
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey[700]),
                         ),
                         Text(
-                          "Company: ${product["companyName"] ?? 'N/A'}",
+                          " ${product["companyName"] ?? 'N/A'}",
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey[700]),
                         ),
                       ],

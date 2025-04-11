@@ -77,6 +77,32 @@ class _PaymentScreenState extends State<PaymentScreen> {
     };
     try {
       await FirebaseFirestore.instance.collection('exportingOrders').add(orderData);
+      // Reduce product stock
+      String productId = widget.productId;
+      int purchasedQuantity = int.tryParse(widget.selectedQuantity) ?? 0;
+      debugPrint("Purchased quantity: $purchasedQuantity");
+
+      DocumentReference productRef = FirebaseFirestore.instance
+          .collection('products')
+          .doc(productId);
+      DocumentSnapshot productSnapshot = await productRef.get();
+
+      if (productSnapshot.exists) {
+        // Reading current stock and logging it
+        int currentStock = productSnapshot['stock'] ?? 0;
+        debugPrint("Current stock for product $productId: $currentStock");
+
+        // Calculate updated stock
+        int updatedStock = (currentStock - purchasedQuantity).clamp(0, currentStock);
+        debugPrint("Updated stock for product $productId: $updatedStock");
+
+        // Update stock in Firestore
+        await productRef.update({'stock': updatedStock});
+        debugPrint("Stock updated successfully!");
+      } else {
+        debugPrint("Product with id $productId does not exist.");
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Order saved successfully!')),
 
@@ -138,7 +164,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       appBar: AppBar(
         title: const Text('Payment'),
         centerTitle: true,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Color(0xFF033015),
         elevation: 0,
       ),
       body: SingleChildScrollView(

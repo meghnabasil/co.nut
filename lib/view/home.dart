@@ -536,8 +536,10 @@ import 'package:dup/view/user_view_subscriptions.dart';
                         context, 'Workers', 'asset/wrk.jpg', WorkersList()),
                     _buildCard(context, 'Pickup&Return', 'asset/pkrt.jpg',
                         Doorsteps()),
+                    // _buildCard(
+                    //     context, 'Tools', 'asset/to.jpg', ListOfTools()),
                     _buildCard(
-                        context, 'Tools', 'asset/to.jpg', ListOfTools()),
+                        context, 'Global Shipping', 'asset/gs.jpg', International()),
                   ],
                 ),
               ),

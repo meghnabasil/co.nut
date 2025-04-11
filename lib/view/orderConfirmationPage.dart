@@ -11,7 +11,7 @@ class OrderConfirmationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Order Confirmation')),
+      appBar: AppBar(title: Text('Order Confirmation',style: TextStyle(color: Colors.white),), backgroundColor: Color(0xFF033015),iconTheme:IconThemeData(color:Colors.white),),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

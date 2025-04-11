@@ -48,6 +48,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
   }
 
+
   Future<void> fetchProductDetails() async {
     try {
       List<Map<dynamic, dynamic>> productList = [];
@@ -287,7 +288,9 @@ class _ShippingAddressState extends State<ShippingAddress> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Shipping Address')),
+      appBar: AppBar(title: const Text('Shipping Address',style: TextStyle(color: Colors.white),),backgroundColor: Color(0xFF033015),
+        iconTheme: IconThemeData(color: Colors.white),
+    ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -472,7 +475,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
               ElevatedButton(
                 onPressed: isProcessingPayment ? null : _submitForm,
                 child: isProcessingPayment
-                    ? CircularProgressIndicator(color: Colors.white)
+                    ? CircularProgressIndicator(color: Colors.grey[900])
                     : Text('Save Address and Proceed to Payment'),
               ),
             ],

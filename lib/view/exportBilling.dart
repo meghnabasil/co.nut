@@ -101,7 +101,7 @@ class _ExportBillingState extends State<ExportBilling> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Export Billing"),
+        title: Text("Export Billing",style:TextStyle(color: Colors.white),),  backgroundColor: Color(0xFF033015),iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
@@ -138,10 +138,10 @@ class _ExportBillingState extends State<ExportBilling> {
                     SizedBox(height: 10),
                     Text("Product Name: ${widget.productName}",
                         style: TextStyle(fontSize: 16)),
-                    Text("Vendor ID: ${widget.vendorId}",
-                        style: TextStyle(fontSize: 16)),
-                    Text("Product ID: ${widget.productId}",
-                        style: TextStyle(fontSize: 16)),
+                    // Text("Vendor ID: ${widget.vendorId}",
+                    //     style: TextStyle(fontSize: 16)),
+                    // Text("Product ID: ${widget.productId}",
+                    //     style: TextStyle(fontSize: 16)),
                   ],
                 ),
               ),

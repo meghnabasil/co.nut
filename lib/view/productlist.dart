@@ -593,16 +593,18 @@ class _ProductDetailState extends State<ProductDetail> {
                                         selectedCountry = newValue;
                                       });
                                     },
-                                    items: productData!['exportingDetails']
-                                        .map<DropdownMenuItem<String>>(
-                                            (export) =>
-                                                DropdownMenuItem<String>(
-                                                  value: export['country'],
-                                                  child:
-                                                      Text(export['country']),
-                                                ))
-                                        .toList(),
+                                    items: (productData?['exportingDetails'] != null
+                                        ? (productData!['exportingDetails'] as List)
+                                        .map<DropdownMenuItem<String>>((export) {
+                                      final country = export['country'] ?? 'Unknown';
+                                      return DropdownMenuItem<String>(
+                                        value: country,
+                                        child: Text(country),
+                                      );
+                                    }).toList()
+                                        : []), // <- return empty list if null
                                   ),
+
                                 ],
                               ),
                             ),
@@ -621,7 +623,7 @@ class _ProductDetailState extends State<ProductDetail> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Padding(
-                                      padding: EdgeInsets.all(45),
+                                      padding: EdgeInsets.all(16),
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,

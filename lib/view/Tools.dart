@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:dup/view/Toollist.dart';
 
@@ -9,8 +8,6 @@ class ListOfTools extends StatefulWidget {
 }
 
 class _ListOfToolsState extends State<ListOfTools> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  String? currentVendorId;
   List<Map<String, dynamic>> allTools = [];
   List<Map<String, dynamic>> filteredTools = [];
   TextEditingController searchController = TextEditingController();
@@ -18,35 +15,25 @@ class _ListOfToolsState extends State<ListOfTools> {
   @override
   void initState() {
     super.initState();
-    _getCurrentVendor();
+    _fetchAllTools(); // Fetch tools for all users
   }
 
-  void _getCurrentVendor() {
-    final User? user = _auth.currentUser;
-    if (user != null) {
+  Future<void> _fetchAllTools() async {
+    try {
+      QuerySnapshot snapshot =
+      await FirebaseFirestore.instance.collection('tools').get();
+
       setState(() {
-        currentVendorId = user.uid;
-        _fetchVendorTools();
+        allTools = snapshot.docs.map((doc) {
+          var data = doc.data() as Map<String, dynamic>;
+          data['id'] = doc.id;
+          return data;
+        }).toList();
+        filteredTools = allTools;
       });
+    } catch (e) {
+      print("Error fetching tools: $e");
     }
-  }
-
-  Future<void> _fetchVendorTools() async {
-    if (currentVendorId == null) return;
-
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('tools')
-        .where('vendorId', isEqualTo: currentVendorId)
-        .get();
-
-    setState(() {
-      allTools = snapshot.docs.map((doc) {
-        var data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
-        return data;
-      }).toList();
-      filteredTools = allTools;
-    });
   }
 
   void _filterTools(String query) {
@@ -70,32 +57,29 @@ class _ListOfToolsState extends State<ListOfTools> {
       appBar: AppBar(
         title: Container(
           decoration: BoxDecoration(
-            color: Colors.white54, // Light grey background
-            borderRadius: BorderRadius.circular(30), // Circular border radius 30
+            color: Colors.white54,
+            borderRadius: BorderRadius.circular(30),
           ),
           child: TextField(
             controller: searchController,
             onChanged: _filterTools,
-            style: TextStyle(color: Colors.black), // Text color
+            style: TextStyle(color: Colors.black),
             decoration: InputDecoration(
               hintText: 'Search tools...',
               hintStyle: TextStyle(color: Colors.white70),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30), // Circular border (30)
-                borderSide: BorderSide(color: Colors.transparent), // No visible border
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: Colors.green, width: 1), // Green border on focus
+                borderSide: BorderSide(color: Colors.green, width: 1),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: Colors.transparent), // No border when not focused
-              ),
-              contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 15), // Padding
-              prefixIcon: Icon(Icons.search, color: Colors.black54), // Search icon
+              contentPadding:
+              EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+              prefixIcon: Icon(Icons.search, color: Colors.black54),
               filled: true,
-              fillColor: Colors.white54, // Background color
+              fillColor: Colors.white54,
             ),
           ),
         ),
@@ -127,7 +111,8 @@ class _ListOfToolsState extends State<ListOfTools> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ToolsDetail(toolId: tool['id']),
+                    builder: (context) =>
+                        ToolsDetail(toolId: tool['id']),
                   ),
                 );
               },
@@ -150,15 +135,22 @@ class _ListOfToolsState extends State<ListOfTools> {
                             ? Image.network(
                           tool['imageUrls'][0],
                           fit: BoxFit.contain,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(child: CircularProgressIndicator());
+                          loadingBuilder:
+                              (context, child, loadingProgress) {
+                            if (loadingProgress == null)
+                              return child;
+                            return Center(
+                                child:
+                                CircularProgressIndicator());
                           },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(Icons.broken_image, size: 50, color: Colors.red);
+                          errorBuilder:
+                              (context, error, stackTrace) {
+                            return Icon(Icons.broken_image,
+                                size: 50, color: Colors.red);
                           },
                         )
-                            : Icon(Icons.image, size: 50, color: Colors.grey),
+                            : Icon(Icons.image,
+                            size: 50, color: Colors.grey),
                       ),
                     ),
                     SizedBox(height: 8),
